@@ -16,14 +16,78 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   name         String
-  passwordHash String
   email        String   @unique
+  passwordHash String
+  role         Role
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  role         Role
+
+  proposals Proposal[]
+  auditLogs AuditLog[]
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  cnpjCpf   String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  proposals Proposal[]
+}
+
+model Proposal {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  totalAmount Int
+  status      ProposalStatus
+  version     Int            @default(1)
+  pdfUrl      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId   String
+  clientId String
+  user     User           @relation(fields: [userId], references: [id])
+  client   Client         @relation(fields: [clientId], references: [id])
+  items    ProposalItem[]
+}
+
+model ProposalItem {
+  id          String @id @default(cuid())
+  description String
+  quantity    Int
+  unitPrice   Int
+  total       Int
+
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 enum Role {
   ADMIN
   SALESPERSON
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
 }
