@@ -23,8 +23,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  proposals Proposal[]
-  auditLogs AuditLog[]
+  proposals   Proposal[]
+  ProposalLog ProposalLog[]
 }
 
 model Client {
@@ -57,6 +57,11 @@ model Proposal {
   user     User           @relation(fields: [userId], references: [id])
   client   Client         @relation(fields: [clientId], references: [id])
   items    ProposalItem[]
+
+  parentId    String?
+  parent      Proposal?     @relation("ProposalVersions", fields: [parentId], references: [id])
+  versions    Proposal[]    @relation("ProposalVersions")
+  ProposalLog ProposalLog[]
 }
 
 model ProposalItem {
@@ -70,15 +75,27 @@ model ProposalItem {
   proposal   Proposal @relation(fields: [proposalId], references: [id])
 }
 
-model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  entity    String
-  entityId  String
-  createdAt DateTime @default(now())
+model ProposalLog {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  changedById String
+  changedBy   User   @relation(fields: [changedById], references: [id])
+
+  action  ProposalAction 
+  oldData Json?
+  newData Json?
+
+  createdAt DateTime @default(now())
+}
+
+enum ProposalAction {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  VERSIONED
+  DELETED
 }
 
 enum Role {

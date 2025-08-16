@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,6 +8,9 @@ import { ClientsModule } from './modules/clients/clients.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ProposalsModule } from './modules/proposals/proposals.module';
 import * as redisStore from 'cache-manager-redis-store';
+import { LogMiddleware } from './common/middlewares';
+import { LoggerService } from './common/services';
+import { ProposalItemsModule } from './modules/proposal-items/proposal-items.module';
 
 @Module({
   imports: [
@@ -18,7 +21,7 @@ import * as redisStore from 'cache-manager-redis-store';
         store: redisStore,
         host: configService.get<string>('REDIS_HOST') || 'localhost',
         port: configService.get<number>('REDIS_PORT') || 6379,
-        ttl: configService.get<number>('CACHE_TTL') || 3600, 
+        ttl: configService.get<number>('CACHE_TTL') || 3600,
       }),
       inject: [ConfigService],
     }),
@@ -26,8 +29,13 @@ import * as redisStore from 'cache-manager-redis-store';
     AuthModule,
     ClientsModule,
     ProposalsModule,
+    ProposalItemsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, LoggerService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LogMiddleware).forRoutes('*');
+  }
+}

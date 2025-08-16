@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { UserEntity } from './modules/users/entities/user.entity';
 import { ClientEntity } from './modules/clients/entities/client.entity';
+import { ProposalItem } from './modules/proposal-items/entities/proposal-item.entity';
 import passport from 'passport';
 
 async function bootstrap() {
@@ -17,7 +18,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, options, {
-    extraModels: [UserEntity, ClientEntity],
+    extraModels: [UserEntity, ClientEntity, ProposalItem],
   });
 
   SwaggerModule.setup('/api', app, document);

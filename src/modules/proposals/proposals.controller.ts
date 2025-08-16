@@ -1,32 +1,65 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
-import { ProposalsService } from './proposals.service';
-import { CreateProposalDto } from './dto/create-proposal.dto';
-import { UpdateProposalDto } from './dto/update-proposal.dto';
-import { FindProposalsDto } from './dto/find-proposals.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard, RolesGuard } from 'src/common/guards';
 import type { RequestWithUser } from 'src/common/interfaces';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { CreateProposalDto } from './dto/create-proposal.dto';
+import { FindProposalsDto } from './dto/find-proposals.dto';
+import { UpdateProposalDto } from './dto/update-proposal.dto';
+import { ProposalsService } from './proposals.service';
+import { ProposalPdfService } from 'src/common/services';
+import express from 'express';
 
 @ApiTags('propostas')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('proposals')
 export class ProposalsController {
-  constructor(private readonly proposalsService: ProposalsService) {}
+  constructor(
+    private readonly proposalsService: ProposalsService,
+    private readonly proposalPdfService: ProposalPdfService,
+  ) {}
 
   @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Criar uma nova proposta' })
-  @ApiResponse({ status: 201, description: 'A proposta foi criada com sucesso.' })
+  @ApiResponse({
+    status: 201,
+    description: 'A proposta foi criada com sucesso.',
+  })
   @ApiResponse({ status: 403, description: 'Acesso negado.' })
   @ApiBody({ type: CreateProposalDto })
-  create(@Body() createProposalDto: CreateProposalDto, @Req() req: RequestWithUser) {
+  create(
+    @Body() createProposalDto: CreateProposalDto,
+    @Req() req: RequestWithUser,
+  ) {
     return this.proposalsService.create(createProposalDto, req.user.userId);
   }
 
   @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Obter todas as propostas' })
   @ApiResponse({ status: 200, description: 'Retorna todas as propostas.' })
@@ -36,6 +69,8 @@ export class ProposalsController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Obter uma proposta por ID' })
   @ApiResponse({ status: 200, description: 'Retorna uma única proposta.' })
@@ -48,18 +83,27 @@ export class ProposalsController {
   @Patch(':id')
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Atualizar uma proposta por ID' })
-  @ApiResponse({ status: 200, description: 'A proposta foi atualizada com sucesso.' })
+  @ApiResponse({
+    status: 200,
+    description: 'A proposta foi atualizada com sucesso.',
+  })
   @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
   @ApiBody({ type: UpdateProposalDto })
   @ApiParam({ name: 'id', description: 'ID da proposta a ser atualizada' })
-  update(@Param('id') id: string, @Body() updateProposalDto: UpdateProposalDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateProposalDto: UpdateProposalDto,
+  ) {
     return this.proposalsService.update(id, updateProposalDto);
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Excluir uma proposta por ID' })
-  @ApiResponse({ status: 200, description: 'A proposta foi excluída com sucesso.' })
+  @ApiResponse({
+    status: 200,
+    description: 'A proposta foi excluída com sucesso.',
+  })
   @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
   @ApiParam({ name: 'id', description: 'ID da proposta a ser excluída' })
   remove(@Param('id') id: string) {
@@ -69,10 +113,27 @@ export class ProposalsController {
   @Post(':id/version')
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Criar uma nova versão de uma proposta' })
-  @ApiResponse({ status: 201, description: 'Uma nova versão da proposta foi criada.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Uma nova versão da proposta foi criada.',
+  })
   @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
   @ApiParam({ name: 'id', description: 'ID da proposta para versionar' })
   version(@Param('id') id: string) {
     return this.proposalsService.version(id);
+  }
+
+  @Get(':id/pdf')
+  async getPdf(@Param('id') id: string, @Res() res: express.Response) {
+    const proposal = await this.proposalsService.findOne(id);
+    const pdfBuffer = await this.proposalPdfService.generate(proposal);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=proposal-${id}.pdf`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer);
   }
 }
