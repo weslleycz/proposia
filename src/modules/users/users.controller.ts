@@ -28,6 +28,7 @@ export class UsersController {
     description: 'Já existe um usuário com este e-mail.',
   })
   @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   create(@Body() createUserDto: CreateUserDto) {

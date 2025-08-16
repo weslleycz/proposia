@@ -5,10 +5,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import type { RequestWithUser } from 'src/common/interfaces/request-with-user.interface';
+import { JwtRefreshAuthGuard } from 'src/common/guards';
+import type { RequestWithUser } from 'src/common/interfaces';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto } from './dto';
-import { JwtRefreshAuthGuard } from 'src/common/guards';
 
 @ApiTags('Auth')
 @Controller('auth')

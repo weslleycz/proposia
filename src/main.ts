@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { UserEntity } from './modules/users/entities/user.entity';
+import { ClientEntity } from './modules/clients/entities/client.entity';
 import passport from 'passport';
 
 async function bootstrap() {
@@ -16,7 +17,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, options, {
-    extraModels: [UserEntity],
+    extraModels: [UserEntity, ClientEntity],
   });
 
   SwaggerModule.setup('/api', app, document);
