@@ -3,7 +3,7 @@ version: "3.8"
 services:
   postgres:
     image: postgres:16
-    container_name: postgres
+    container_name: postgres-proposia
     restart: always
     environment:
       POSTGRES_USER: admin
@@ -24,3 +24,10 @@ services:
       DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
+
+  redis:
+    image: redis:latest
+    container_name: redis-proposia
+    restart: always
+    ports:
+      - "6379:6379"
