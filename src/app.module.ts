@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ProposalsModule } from './modules/proposals/proposals.module';
 import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
@@ -24,6 +25,7 @@ import * as redisStore from 'cache-manager-redis-store';
     UsersModule,
     AuthModule,
     ClientsModule,
+    ProposalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
