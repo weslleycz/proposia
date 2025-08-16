@@ -1,8 +1,16 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+import { JwtAuthGuard, RolesGuard } from 'src/common/guards';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserEntity } from './entities/user.entity';
+import { UsersService } from './users.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -11,28 +19,42 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: 'Cria um novo usuário' })
-  @ApiResponse({ status: 201, description: 'O usuário foi criado com sucesso.' })
-  @ApiResponse({ status: 409, description: 'Já existe um usuário com este e-mail.' })
+  @ApiResponse({
+    status: 201,
+    description: 'O usuário foi criado com sucesso.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Já existe um usuário com este e-mail.',
+  })
   @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Lista todos os usuários' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'A lista de usuários foi retornada com sucesso.',
     type: [UserEntity],
   })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SALESPERSON)
+  @ApiBearerAuth()
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Busca um usuário pelo ID' })
-  @ApiResponse({ 
-    status: 200, 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SALESPERSON)
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
     description: 'O usuário foi retornado com sucesso.',
     type: UserEntity,
   })

@@ -2,14 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { UserEntity } from './modules/users/entities/user.entity';
+import passport from 'passport';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+    app.use(passport.initialize())
+
   const options = new DocumentBuilder()
     .setTitle('API Documentation')
     .setVersion('1.0')
-    .addBearerAuth()
+     .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, options, {

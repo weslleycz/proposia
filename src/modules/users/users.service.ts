@@ -1,17 +1,25 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/common/services';
-import { CreateUserDto } from './dto/create-user.dto';
 import { Role } from '@prisma/client';
+import { CreateUserDto } from './dto';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  private get userRepository() {
+    return this.prismaService.user;
+  }
+
   async create(createUserDto: CreateUserDto) {
     const { name, email, password } = createUserDto;
 
-    const userExists = await this.prismaService.user.findUnique({
+    const userExists = await this.userRepository.findUnique({
       where: { email },
     });
 
@@ -21,7 +29,7 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prismaService.user.create({
+    const user = await this.userRepository.create({
       data: {
         name,
         email,
@@ -35,7 +43,7 @@ export class UsersService {
   }
 
   async findAll() {
-    const users = await this.prismaService.user.findMany({
+    const users = await this.userRepository.findMany({
       select: {
         id: true,
         name: true,
@@ -49,7 +57,7 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.prismaService.user.findUnique({
+    const user = await this.userRepository.findUnique({
       where: { id },
       select: {
         id: true,
@@ -68,4 +76,3 @@ export class UsersService {
     return user;
   }
 }
-
