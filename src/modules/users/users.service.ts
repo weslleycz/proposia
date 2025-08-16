@@ -4,7 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { BcryptService, PrismaService } from 'src/common/services';
+import {
+  BcryptService,
+  PrismaService,
+  SendMailService,
+} from 'src/common/services';
 import { CreateUserDto } from './dto';
 
 @Injectable()
@@ -12,6 +16,7 @@ export class UsersService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly bcryptService: BcryptService,
+    private readonly sendMailService: SendMailService,
   ) {}
 
   private get userRepository() {
@@ -37,6 +42,15 @@ export class UsersService {
         email,
         passwordHash: hashedPassword,
         role: Role.SALESPERSON,
+      },
+    });
+
+    await this.sendMailService.send({
+      to: user.email,
+      subject: 'Bem-vindo',
+      template: 'welcome.pug',
+      parametros: {
+        nome: user.name,
       },
     });
 
