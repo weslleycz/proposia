@@ -1,5 +1,11 @@
 import { ProposalAction } from '@prisma/client';
-import { IsEnum, IsJSON, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsJSON,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateProposalLogDto {
   @IsString()

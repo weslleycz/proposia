@@ -1,4 +1,9 @@
-import { CACHE_MANAGER, Cache, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import {
+  CACHE_MANAGER,
+  Cache,
+  CacheKey,
+  CacheTTL,
+} from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/common/services';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -25,7 +30,15 @@ export class ClientsService {
   }
 
   async findAll(query: FindClientsDto) {
-    const { page = 1, pageSize = 10, name, email, phone, cnpjCpf, address } = query;
+    const {
+      page = 1,
+      pageSize = 10,
+      name,
+      email,
+      phone,
+      cnpjCpf,
+      address,
+    } = query;
 
     const parsedPage = Number(page);
     const parsedPageSize = Number(pageSize);

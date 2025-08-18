@@ -7,22 +7,37 @@ export class CreateClientDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ description: 'Email do cliente', example: 'joao.silva@example.com' })
+  @ApiProperty({
+    description: 'Email do cliente',
+    example: 'joao.silva@example.com',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ description: 'Telefone do cliente (opcional)', example: '11987654321', required: false })
+  @ApiProperty({
+    description: 'Telefone do cliente (opcional)',
+    example: '11987654321',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  @ApiProperty({ description: 'CNPJ ou CPF do cliente (opcional)', example: '123.456.789-00', required: false })
+  @ApiProperty({
+    description: 'CNPJ ou CPF do cliente (opcional)',
+    example: '123.456.789-00',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   cnpjCpf?: string;
 
-  @ApiProperty({ description: 'Endereço do cliente (opcional)', example: 'Rua Exemplo, 123', required: false })
+  @ApiProperty({
+    description: 'Endereço do cliente (opcional)',
+    example: 'Rua Exemplo, 123',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   address?: string;

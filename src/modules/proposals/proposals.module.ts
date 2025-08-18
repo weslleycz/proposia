@@ -20,7 +20,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     ProposalPdfService,
     SendMailService,
     EmailService,
-    S3Service
+    S3Service,
   ],
 })
 export class ProposalsModule {}

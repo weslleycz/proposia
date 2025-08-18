@@ -44,19 +44,57 @@ export class ClientsController {
 
   @Get()
   @ApiOperation({ summary: 'Lista todos os clientes com filtros e paginação' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filtra clientes pelo nome' })
-  @ApiQuery({ name: 'email', required: false, type: String, description: 'Filtra clientes pelo email' })
-  @ApiQuery({ name: 'phone', required: false, type: String, description: 'Filtra clientes pelo telefone' })
-  @ApiQuery({ name: 'cnpjCpf', required: false, type: String, description: 'Filtra clientes pelo CNPJ/CPF' })
-  @ApiQuery({ name: 'address', required: false, type: String, description: 'Filtra clientes pelo endereço' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número da página (padrão: 1)' })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number, description: 'Quantidade de itens por página (padrão: 10)' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filtra clientes pelo nome',
+  })
+  @ApiQuery({
+    name: 'email',
+    required: false,
+    type: String,
+    description: 'Filtra clientes pelo email',
+  })
+  @ApiQuery({
+    name: 'phone',
+    required: false,
+    type: String,
+    description: 'Filtra clientes pelo telefone',
+  })
+  @ApiQuery({
+    name: 'cnpjCpf',
+    required: false,
+    type: String,
+    description: 'Filtra clientes pelo CNPJ/CPF',
+  })
+  @ApiQuery({
+    name: 'address',
+    required: false,
+    type: String,
+    description: 'Filtra clientes pelo endereço',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número da página (padrão: 1)',
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: Number,
+    description: 'Quantidade de itens por página (padrão: 10)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de clientes retornada com sucesso.',
     schema: {
       properties: {
-        clients: { type: 'array', items: { $ref: '#/components/schemas/ClientEntity' } },
+        clients: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/ClientEntity' },
+        },
         total: { type: 'number' },
         page: { type: 'number' },
         pageSize: { type: 'number' },

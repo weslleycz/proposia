@@ -6,7 +6,10 @@ import { getAuthConfig } from '../../../common/config/auth.config';
 import { JwtPayload } from 'src/common/interfaces';
 
 @Injectable()
-export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class RefreshJwtStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(private readonly configService: ConfigService) {
     const authConfig = getAuthConfig(configService);
     super({
@@ -16,7 +19,9 @@ export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     });
   }
 
-  async validate(payload: JwtPayload): Promise<{ userId: string; email: string }> {
+  async validate(
+    payload: JwtPayload,
+  ): Promise<{ userId: string; email: string }> {
     if (!payload?.sub) {
       throw new UnauthorizedException('Invalid refresh token');
     }

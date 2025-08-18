@@ -365,42 +365,44 @@ export class ProposalsService {
       throw new Error('Log does not contain valid data to revert to.');
     }
 
-    const revertedProposal = await this.prismaService.$transaction(async (tx) => {
-      await tx.proposalItem.deleteMany({ where: { proposalId } });
+    const revertedProposal = await this.prismaService.$transaction(
+      async (tx) => {
+        await tx.proposalItem.deleteMany({ where: { proposalId } });
 
-      const newItems = targetState.items.map((item: any) => ({
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.quantity * item.unitPrice,
-      }));
+        const newItems = targetState.items.map((item: any) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.quantity * item.unitPrice,
+        }));
 
-      const reverted = await tx.proposal.update({
-        where: { id: proposalId },
-        data: {
-          title: targetState.title,
-          description: targetState.description,
-          status: targetState.status,
-          version: proposalToRevert.version + 1,
-          items: {
-            createMany: {
-              data: newItems,
+        const reverted = await tx.proposal.update({
+          where: { id: proposalId },
+          data: {
+            title: targetState.title,
+            description: targetState.description,
+            status: targetState.status,
+            version: proposalToRevert.version + 1,
+            items: {
+              createMany: {
+                data: newItems,
+              },
             },
           },
-        },
-        include: { items: true },
-      });
+          include: { items: true },
+        });
 
-      const totalAmount = reverted.items.reduce(
-        (sum, item) => sum + item.total,
-        0,
-      );
+        const totalAmount = reverted.items.reduce(
+          (sum, item) => sum + item.total,
+          0,
+        );
 
-      return tx.proposal.update({
-        where: { id: proposalId },
-        data: { totalAmount },
-      });
-    });
+        return tx.proposal.update({
+          where: { id: proposalId },
+          data: { totalAmount },
+        });
+      },
+    );
 
     await this.logProposal(
       proposalId,

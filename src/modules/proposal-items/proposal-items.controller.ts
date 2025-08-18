@@ -27,25 +27,28 @@ import { ProposalItemsService } from './proposal-items.service';
 @UseGuards(JwtAuthGuard)
 @Controller('proposals/:proposalId/items')
 export class ProposalItemsController {
-  constructor(
-    private readonly proposalItemsService: ProposalItemsService,
-  ) {}
+  constructor(private readonly proposalItemsService: ProposalItemsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Adicionar um novo item a uma proposta' })
-  @ApiCreatedResponse({ description: 'Item criado com sucesso.', type: ProposalItem })
+  @ApiCreatedResponse({
+    description: 'Item criado com sucesso.',
+    type: ProposalItem,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   create(
     @Param('proposalId') proposalId: string,
     @Body() createProposalItemDto: CreateProposalItemDto,
   ) {
-    
     return this.proposalItemsService.create(proposalId, createProposalItemDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os itens de uma proposta' })
-  @ApiOkResponse({ description: 'Itens retornados com sucesso.', type: [ProposalItem] })
+  @ApiOkResponse({
+    description: 'Itens retornados com sucesso.',
+    type: [ProposalItem],
+  })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   findAll(@Param('proposalId') proposalId: string) {
     return this.proposalItemsService.findAll(proposalId);
@@ -56,16 +59,16 @@ export class ProposalItemsController {
   @ApiOkResponse({ description: 'Item encontrado.', type: ProposalItem })
   @ApiResponse({ status: 404, description: 'Not Found.' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  findOne(
-    @Param('proposalId') proposalId: string,
-    @Param('id') id: string,
-  ) {
+  findOne(@Param('proposalId') proposalId: string, @Param('id') id: string) {
     return this.proposalItemsService.findOne(proposalId, id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um item de uma proposta' })
-  @ApiOkResponse({ description: 'Item atualizado com sucesso.', type: ProposalItem })
+  @ApiOkResponse({
+    description: 'Item atualizado com sucesso.',
+    type: ProposalItem,
+  })
   @ApiResponse({ status: 404, description: 'Not Found.' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   update(
@@ -73,13 +76,20 @@ export class ProposalItemsController {
     @Param('id') id: string,
     @Body() updateProposalItemDto: UpdateProposalItemDto,
   ) {
-    return this.proposalItemsService.update(proposalId, id, updateProposalItemDto);
+    return this.proposalItemsService.update(
+      proposalId,
+      id,
+      updateProposalItemDto,
+    );
   }
 
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Remover um item de uma proposta' })
-  @ApiResponse({ status: 204, description: 'Item removido com sucesso (sem conteúdo).' })
+  @ApiResponse({
+    status: 204,
+    description: 'Item removido com sucesso (sem conteúdo).',
+  })
   @ApiResponse({ status: 404, description: 'Not Found.' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   async remove(

@@ -12,8 +12,7 @@ import {
   Res,
   UseGuards,
   UseInterceptors,
-}
-from '@nestjs/common';
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -36,9 +35,7 @@ import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 @ApiTags('propostas')
 @Controller('proposals')
 export class ProposalsController {
-  constructor(
-    private readonly proposalsService: ProposalsService,
-  ) {}
+  constructor(private readonly proposalsService: ProposalsService) {}
 
   @Post()
   @ApiBearerAuth()
@@ -63,7 +60,10 @@ export class ProposalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Obter todas as propostas ativas' })
-  @ApiResponse({ status: 200, description: 'Retorna todas as propostas ativas.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Retorna todas as propostas ativas.',
+  })
   @ApiQuery({ type: FindProposalsDto })
   findAll(@Query() query: FindProposalsDto) {
     return this.proposalsService.findAll(query);
@@ -77,7 +77,10 @@ export class ProposalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Obter todas as propostas deletadas' })
-  @ApiResponse({ status: 200, description: 'Retorna todas as propostas deletadas.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Retorna todas as propostas deletadas.',
+  })
   @ApiQuery({ type: FindDeletedProposalsDto })
   findDeleted(@Query() query: FindDeletedProposalsDto) {
     return this.proposalsService.findDeleted(query);
@@ -139,7 +142,10 @@ export class ProposalsController {
     status: 200,
     description: 'A proposta foi restaurada com sucesso.',
   })
-  @ApiResponse({ status: 404, description: 'Proposta deletada não encontrada.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Proposta deletada não encontrada.',
+  })
   @ApiParam({ name: 'id', description: 'ID da proposta a ser restaurada' })
   restore(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.proposalsService.restore(id, req.user.userId);
@@ -150,9 +156,15 @@ export class ProposalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Reverter uma proposta para uma versão anterior' })
-  @ApiResponse({ status: 200, description: 'A proposta foi revertida com sucesso.' })
+  @ApiResponse({
+    status: 200,
+    description: 'A proposta foi revertida com sucesso.',
+  })
   @ApiResponse({ status: 404, description: 'Proposta ou log não encontrado.' })
-  @ApiParam({ name: 'proposalId', description: 'ID da proposta a ser revertida' })
+  @ApiParam({
+    name: 'proposalId',
+    description: 'ID da proposta a ser revertida',
+  })
   @ApiParam({ name: 'logId', description: 'ID do log para o qual reverter' })
   revert(
     @Param('proposalId') proposalId: string,
@@ -162,14 +174,14 @@ export class ProposalsController {
     return this.proposalsService.revert(proposalId, logId, req.user.userId);
   }
 
-  @Get(':id/pdf')
-  async getPdf(@Param('id') id: string, @Res() res: express.Response) {
-    const proposal = await this.proposalsService.findOne(id);
-    if (!proposal.pdfUrl) {
-      throw new NotFoundException(`PDF for proposal with ID "${id}" not found`);
-    }
-    res.redirect(proposal.pdfUrl);
-  }
+  // @Get(':id/pdf')
+  // async getPdf(@Param('id') id: string, @Res() res: express.Response) {
+  //   const proposal = await this.proposalsService.findOne(id);
+  //   if (!proposal.pdfUrl) {
+  //     throw new NotFoundException(`PDF for proposal with ID "${id}" not found`);
+  //   }
+  //   res.redirect(proposal.pdfUrl);
+  // }
 
   @Get(':id/logs')
   @ApiBearerAuth()

@@ -45,7 +45,8 @@ export class ProposalItemsService {
     await this.updateProposalTotal(proposalId);
 
     const updatedProposal = await this.proposalsService.findOne(proposalId);
-    const { s3Url, pdfBuffer } = await this.proposalsService['generateAndUploadPdf'](proposalId);
+    const { s3Url, pdfBuffer } =
+      await this.proposalsService['generateAndUploadPdf'](proposalId);
 
     if (updatedProposal.client.email) {
       await this.proposalsService['sendMailService'].send({
@@ -118,7 +119,8 @@ export class ProposalItemsService {
 
     const updatedProposal = await this.proposalsService.findOne(proposalId);
 
-    const { s3Url, pdfBuffer } = await this.proposalsService['generateAndUploadPdf'](proposalId);
+    const { s3Url, pdfBuffer } =
+      await this.proposalsService['generateAndUploadPdf'](proposalId);
 
     if (updatedProposal.client.email) {
       await this.proposalsService['sendMailService'].send({
@@ -159,7 +161,8 @@ export class ProposalItemsService {
     await this.updateProposalTotal(proposalId);
 
     const updatedProposal = await this.proposalsService.findOne(proposalId);
-    const { s3Url, pdfBuffer } = await this.proposalsService['generateAndUploadPdf'](proposalId);
+    const { s3Url, pdfBuffer } =
+      await this.proposalsService['generateAndUploadPdf'](proposalId);
 
     if (updatedProposal.client.email) {
       await this.proposalsService['sendMailService'].send({

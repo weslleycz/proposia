@@ -34,7 +34,8 @@ export class UserEntity {
   createdAt: Date;
 
   @ApiProperty({
-    description: 'A data e hora em que o usuário foi atualizado pela última vez',
+    description:
+      'A data e hora em que o usuário foi atualizado pela última vez',
     example: '2025-08-15T21:43:20.000Z',
   })
   updatedAt: Date;

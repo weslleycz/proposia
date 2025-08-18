@@ -1,9 +1,18 @@
-import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { getAuthConfig } from 'src/common/config';
 import { JwtPayload } from 'src/common/interfaces';
-import { BcryptService, PrismaService, SendMailService } from 'src/common/services';
+import {
+  BcryptService,
+  PrismaService,
+  SendMailService,
+} from 'src/common/services';
 import { LoginResponseDto } from './dto';
 import { LoginDto } from './dto/login.dto';
 

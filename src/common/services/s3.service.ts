@@ -8,11 +8,17 @@ export class S3Service {
   private bucketName: string;
 
   constructor(private configService: ConfigService) {
-    this.bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME') || 'proposia-pdfs';
-    const endpoint = this.configService.get<string>('AWS_S3_ENDPOINT') || 'http://localhost:4566';
-    const region = this.configService.get<string>('AWS_S3_REGION') || 'us-east-1';
-    const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID') || 'test';
-    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || 'test';
+    this.bucketName =
+      this.configService.get<string>('AWS_S3_BUCKET_NAME') || 'proposia-pdfs';
+    const endpoint =
+      this.configService.get<string>('AWS_S3_ENDPOINT') ||
+      'http://localhost:4566';
+    const region =
+      this.configService.get<string>('AWS_S3_REGION') || 'us-east-1';
+    const accessKeyId =
+      this.configService.get<string>('AWS_ACCESS_KEY_ID') || 'test';
+    const secretAccessKey =
+      this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || 'test';
 
     this.s3 = new S3Client({
       region: region,
@@ -21,7 +27,7 @@ export class S3Service {
         accessKeyId: accessKeyId,
         secretAccessKey: secretAccessKey,
       },
-      forcePathStyle: true, 
+      forcePathStyle: true,
     });
   }
 

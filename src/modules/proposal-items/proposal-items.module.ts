@@ -1,6 +1,11 @@
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
-import { EmailService, ProposalPdfService, S3Service, SendMailService } from 'src/common/services';
+import {
+  EmailService,
+  ProposalPdfService,
+  S3Service,
+  SendMailService,
+} from 'src/common/services';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { ProposalLogsModule } from '../proposal-logs/proposal-logs.module';
 import { ProposalsService } from '../proposals/proposals.service';
@@ -17,7 +22,7 @@ import { ProposalItemsService } from './proposal-items.service';
     S3Service,
     SendMailService,
     ProposalPdfService,
-    EmailService
+    EmailService,
   ],
   exports: [ProposalItemsService],
 })

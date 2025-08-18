@@ -35,7 +35,11 @@ export class FindClientsDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiProperty({ required: false, default: 10, description: 'Number of items per page' })
+  @ApiProperty({
+    required: false,
+    default: 10,
+    description: 'Number of items per page',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
