@@ -1,17 +1,16 @@
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import {
   Body,
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
   Req,
-  Res,
   UseGuards,
-  UseInterceptors,
+  UseInterceptors
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -23,14 +22,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import express from 'express';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard, RolesGuard } from 'src/common/guards';
 import type { RequestWithUser } from 'src/common/interfaces';
 import { CreateProposalDto, FindProposalsDto, UpdateProposalDto } from './dto';
-import { ProposalsService } from './proposals.service';
 import { FindDeletedProposalsDto } from './dto/find-deleted-proposals.dto';
-import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { ProposalsService } from './proposals.service';
 
 @ApiTags('propostas')
 @Controller('proposals')
@@ -174,14 +171,6 @@ export class ProposalsController {
     return this.proposalsService.revert(proposalId, logId, req.user.userId);
   }
 
-  // @Get(':id/pdf')
-  // async getPdf(@Param('id') id: string, @Res() res: express.Response) {
-  //   const proposal = await this.proposalsService.findOne(id);
-  //   if (!proposal.pdfUrl) {
-  //     throw new NotFoundException(`PDF for proposal with ID "${id}" not found`);
-  //   }
-  //   res.redirect(proposal.pdfUrl);
-  // }
 
   @Get(':id/logs')
   @ApiBearerAuth()
