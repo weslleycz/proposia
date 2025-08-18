@@ -15,11 +15,6 @@ export class CreateProposalDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ description: 'O valor total da proposta', example: 15000 })
-  @IsInt()
-  @IsNotEmpty()
-  totalAmount: number;
-
   @ApiProperty({ description: 'O status da proposta', enum: ProposalStatus, default: ProposalStatus.DRAFT, required: false })
   @IsEnum(ProposalStatus)
   @IsOptional()

@@ -8,9 +8,10 @@ import {
   SendMailService,
 } from 'src/common/services';
 import { ProposalLogsModule } from '../proposal-logs/proposal-logs.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [ProposalLogsModule],
+  imports: [ProposalLogsModule, CacheModule.register()],
   controllers: [ProposalsController],
   providers: [
     ProposalsService,

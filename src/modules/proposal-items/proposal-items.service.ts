@@ -5,13 +5,21 @@ import { ProposalItem } from './entities';
 
 @Injectable()
 export class ProposalItemsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
+
+  private get proposalItemRepository() {
+    return this.prismaService.proposalItem;
+  }
+
+  private get proposalRepository() {
+    return this.prismaService.proposal;
+  }
 
   async create(
     proposalId: string,
     createProposalItemDto: CreateProposalItemDto,
   ): Promise<ProposalItem> {
-    const proposal = await this.prisma.proposal.findUnique({
+    const proposal = await this.proposalItemRepository.findUnique({
       where: { id: proposalId },
     });
 
@@ -22,7 +30,7 @@ export class ProposalItemsService {
     const total =
       createProposalItemDto.quantity * createProposalItemDto.unitPrice;
 
-    const item = await this.prisma.proposalItem.create({
+    const item = await this.proposalItemRepository.create({
       data: {
         ...createProposalItemDto,
         total,
@@ -36,11 +44,11 @@ export class ProposalItemsService {
   }
 
   async findAll(proposalId: string): Promise<ProposalItem[]> {
-    return this.prisma.proposalItem.findMany({ where: { proposalId } });
+    return this.proposalItemRepository.findMany({ where: { proposalId } });
   }
 
   async findOne(proposalId: string, id: string): Promise<ProposalItem> {
-    const item = await this.prisma.proposalItem.findFirst({
+    const item = await this.proposalItemRepository.findFirst({
       where: { id, proposalId },
     });
 
@@ -58,7 +66,7 @@ export class ProposalItemsService {
     id: string,
     updateProposalItemDto: UpdateProposalItemDto,
   ): Promise<ProposalItem> {
-    const existingItem = await this.prisma.proposalItem.findFirst({
+    const existingItem = await this.proposalItemRepository.findFirst({
       where: { id, proposalId },
     });
 
@@ -68,14 +76,12 @@ export class ProposalItemsService {
       );
     }
 
-    const quantity =
-      updateProposalItemDto.quantity ?? existingItem.quantity;
-    const unitPrice =
-      updateProposalItemDto.unitPrice ?? existingItem.unitPrice;
+    const quantity = updateProposalItemDto.quantity ?? existingItem.quantity;
+    const unitPrice = updateProposalItemDto.unitPrice ?? existingItem.unitPrice;
 
     const total = quantity * unitPrice;
 
-    const updatedItem = await this.prisma.proposalItem.update({
+    const updatedItem = await this.proposalItemRepository.update({
       where: { id },
       data: {
         ...updateProposalItemDto,
@@ -89,7 +95,7 @@ export class ProposalItemsService {
   }
 
   async remove(proposalId: string, id: string): Promise<ProposalItem> {
-    const existingItem = await this.prisma.proposalItem.findFirst({
+    const existingItem = await this.proposalItemRepository.findFirst({
       where: { id, proposalId },
     });
 
@@ -99,7 +105,7 @@ export class ProposalItemsService {
       );
     }
 
-    const deletedItem = await this.prisma.proposalItem.delete({
+    const deletedItem = await this.proposalItemRepository.delete({
       where: { id },
     });
 
@@ -109,14 +115,14 @@ export class ProposalItemsService {
   }
 
   private async updateProposalTotal(proposalId: string) {
-    const items = await this.prisma.proposalItem.findMany({
+    const items = await this.proposalItemRepository.findMany({
       where: { proposalId },
       select: { total: true },
     });
 
     const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
 
-    await this.prisma.proposal.update({
+    await this.proposalRepository.update({
       where: { id: proposalId },
       data: { totalAmount },
     });

@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER, Cache, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { FindProposalsDto } from './dto/find-proposals.dto';
-import { Prisma, Proposal, ProposalAction, ProposalStatus } from '@prisma/client';
+import {
+  Prisma,
+  Proposal,
+  ProposalAction,
+  ProposalStatus,
+} from '@prisma/client';
 import { ProposalLogsService } from '../proposal-logs/proposal-logs.service';
-import { SendMailService } from 'src/common/services/send-mail.service';
+import { SendMailService } from 'src/common/services';
 
 const proposalWithRelations = Prisma.validator<Prisma.ProposalDefaultArgs>()({
   include: { user: true, client: true, items: true },
@@ -21,6 +27,7 @@ export class ProposalsService {
     private prisma: PrismaService,
     private proposalLogsService: ProposalLogsService,
     private sendMailService: SendMailService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   private async logProposal(
@@ -53,9 +60,14 @@ export class ProposalsService {
       throw new NotFoundException(`Client with ID "${clientId}" not found`);
     }
 
+    const calculatedTotalAmount = items
+      ? items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+      : 0;
+
     const proposal = await this.prisma.proposal.create({
       data: {
         ...rest,
+        totalAmount: calculatedTotalAmount,
         user: { connect: { id: userId } },
         client: { connect: { id: clientId } },
         status: createProposalDto.status || ProposalStatus.DRAFT,
@@ -77,10 +89,8 @@ export class ProposalsService {
       include: { items: true, client: true },
     });
 
-    const total = proposal.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    (proposal as any).total = total;
-
     await this.logProposal(proposal.id, userId, 'CREATED', null, proposal);
+    await this.cacheManager.del(`proposal_logs_${proposal.id}`);
 
     if (proposal.client.email) {
       await this.sendMailService.send({
@@ -126,6 +136,20 @@ export class ProposalsService {
     return proposal;
   }
 
+  @CacheTTL(300)
+  @CacheKey('proposal_logs_')
+  async findLogsByProposalId(proposalId: string) {
+    return this.prisma.proposalLog.findMany({
+      where: { proposalId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        changedBy: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
   async update(
     id: string,
     updateProposalDto: UpdateProposalDto,
@@ -146,6 +170,7 @@ export class ProposalsService {
       where: { id },
       data: {
         ...rest,
+        version: existingProposal.version + 1,
         ...(items !== undefined
           ? {
               items: {
@@ -163,16 +188,55 @@ export class ProposalsService {
             }
           : {}),
       },
+      include: { items: true, client: true },
+    });
+
+    const recalculatedProposal = await this.prisma.proposal.findUnique({
+      where: { id },
       include: { items: true },
     });
+
+    if (!recalculatedProposal) {
+      throw new NotFoundException(
+        `Proposal with ID "${id}" not found after update.`,
+      );
+    }
+
+    const newTotalAmount = recalculatedProposal.items.reduce(
+      (sum, item) => sum + item.quantity * item.unitPrice,
+      0,
+    );
+
+    await this.prisma.proposal.update({
+      where: { id },
+      data: { totalAmount: newTotalAmount },
+    });
+
+    if (items !== undefined && updatedProposal.client.email) {
+      const total = updatedProposal.items.reduce(
+        (sum, item) => sum + item.quantity * item.unitPrice,
+        0,
+      );
+      (updatedProposal as any).total = total;
+
+      await this.sendMailService.send({
+        to: updatedProposal.client.email,
+        subject: 'Proposta Atualizada',
+        template: 'new-proposal.pug',
+        parametros: {
+          proposal: updatedProposal,
+        },
+      });
+    }
 
     await this.logProposal(
       id,
       userId,
-      'UPDATED',
+      'VERSIONED',
       existingProposal,
       updatedProposal,
     );
+    await this.cacheManager.del(`proposal_logs_${id}`);
 
     return updatedProposal;
   }
@@ -191,8 +255,8 @@ export class ProposalsService {
     });
 
     await this.logProposal(id, userId, 'DELETED', existingProposal);
+    await this.cacheManager.del(`proposal_logs_${id}`);
 
     return deletedProposal;
   }
-
 }

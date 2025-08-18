@@ -35,10 +35,10 @@ html
               tr
                 td #{item.description}
                 td #{item.quantity}
-                td #{item.unitPrice.toFixed(2)}
-                td #{(item.quantity * item.unitPrice).toFixed(2)}
+                td #{(item.unitPrice / 100 || 0).toFixed(2)}
+                td #{(item.quantity * (item.unitPrice / 100 || 0)).toFixed(2)}
         .total
-          p Valor Total da Proposta: R$ #{proposal.total.toFixed(2)}
+          p Valor Total da Proposta: R$ #{(proposal.totalAmount / 100 || 0).toFixed(2)}
 
       p Para mais detalhes, acesse nosso portal.
       p Atenciosamente,

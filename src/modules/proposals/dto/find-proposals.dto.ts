@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FindProposalsDto {
-  @ApiProperty({ description: 'Filtrar por título da proposta (não sensível a maiúsculas/minúsculas, correspondência parcial)', required: false, example: 'Website' })
+  @ApiProperty({ description: 'Filtrar por título da proposta (não sensível a maiúsculas/minúsculas, correspondência parcial)', required: false,  })
   @IsString()
   @IsOptional()
   title?: string;
@@ -14,12 +14,12 @@ export class FindProposalsDto {
   @IsOptional()
   status?: ProposalStatus;
 
-  @ApiProperty({ description: 'Filtrar por ID do cliente', required: false, example: 'clx000000000000000000000' })
+  @ApiProperty({ description: 'Filtrar por ID do cliente', required: false, })
   @IsString()
   @IsOptional()
   clientId?: string;
 
-  @ApiProperty({ description: 'Filtrar por ID do usuário (vendedor)', required: false, example: 'clx000000000000000000000' })
+  @ApiProperty({ description: 'Filtrar por ID do usuário (vendedor)', required: false,})
   @IsString()
   @IsOptional()
   userId?: string;

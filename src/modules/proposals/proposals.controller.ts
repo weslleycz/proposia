@@ -21,15 +21,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import express from 'express';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard, RolesGuard } from 'src/common/guards';
 import type { RequestWithUser } from 'src/common/interfaces';
-import { CreateProposalDto } from './dto/create-proposal.dto';
-import { FindProposalsDto } from './dto/find-proposals.dto';
-import { UpdateProposalDto } from './dto/update-proposal.dto';
-import { ProposalsService } from './proposals.service';
 import { ProposalPdfService } from 'src/common/services';
-import express from 'express';
+import { CreateProposalDto, FindProposalsDto, UpdateProposalDto } from './dto';
+import { ProposalsService } from './proposals.service';
 
 @ApiTags('propostas')
 @Controller('proposals')
@@ -127,5 +125,17 @@ export class ProposalsController {
     });
 
     res.end(pdfBuffer);
+  }
+
+  @Get(':id/logs')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SALESPERSON)
+  @ApiOperation({ summary: 'Obter logs de uma proposta por ID' })
+  @ApiResponse({ status: 200, description: 'Retorna os logs da proposta.' })
+  @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
+  @ApiParam({ name: 'id', description: 'ID da proposta para obter os logs' })
+  findLogs(@Param('id') id: string) {
+    return this.proposalsService.findLogsByProposalId(id);
   }
 }
