@@ -25,21 +25,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Make script executable
-        run: chmod +x ./update-image.sh
-
-      - name: Debug environment variables
-        run: |
-          echo "QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}"
-          echo "IMAGE_NAME: ${{ secrets.IMAGE_NAME }}"
-          echo "QUAY_REPO: ${{ secrets.QUAY_REPO }}"
-
-
       - name: Build and push Docker image
         run: |
-          echo "${{ secrets.QUAY_PASSWORD }}" | docker login quay.io -u "${{ secrets.QUAY_USERNAME }}" --password-stdin
-          docker buildx build --platform linux/amd64 -t ${{ secrets.IMAGE_NAME }}:latest --load .
-          docker tag ${{ secrets.IMAGE_NAME }}:latest ${{ secrets.QUAY_REPO }}:latest
-          docker push ${{ secrets.QUAY_REPO }}:latest
-          docker logout quay.io
+          set -e
+          echo "Iniciando o login no Quay.io..."
+          echo "$QUAY_PASSWORD" | docker login quay.io -u "$QUAY_USERNAME" --password-stdin
+          echo "Login realizado com sucesso!"
 
+          echo "Construindo a imagem Docker ($IMAGE_NAME:$TAG) para a plataforma $PLATFORM..."
+          docker buildx build --platform $PLATFORM --no-cache -t $IMAGE_NAME:$TAG --load .
+          echo "Imagem construída com sucesso!"
+
+          echo "Tagueando a imagem para o repositório Quay.io..."
+          docker tag $IMAGE_NAME:$TAG $QUAY_REPO:$TAG
+
+          echo "Enviando a imagem para $QUAY_REPO com a tag $TAG..."
+          docker push $QUAY_REPO:$TAG
+          echo "Imagem enviada com sucesso para o Quay.io!"
+
+          docker logout quay.io
+          echo "Processo finalizado."
