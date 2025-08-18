@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -25,7 +26,7 @@ import express from 'express';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard, RolesGuard } from 'src/common/guards';
 import type { RequestWithUser } from 'src/common/interfaces';
-import { ProposalPdfService } from 'src/common/services';
+import { ProposalPdfService, S3Service } from 'src/common/services';
 import { CreateProposalDto, FindProposalsDto, UpdateProposalDto } from './dto';
 import { ProposalsService } from './proposals.service';
 
@@ -34,7 +35,6 @@ import { ProposalsService } from './proposals.service';
 export class ProposalsController {
   constructor(
     private readonly proposalsService: ProposalsService,
-    private readonly proposalPdfService: ProposalPdfService,
   ) {}
 
   @Post()
@@ -116,15 +116,10 @@ export class ProposalsController {
   @Get(':id/pdf')
   async getPdf(@Param('id') id: string, @Res() res: express.Response) {
     const proposal = await this.proposalsService.findOne(id);
-    const pdfBuffer = await this.proposalPdfService.generate(proposal);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename=proposal-${id}.pdf`,
-      'Content-Length': pdfBuffer.length,
-    });
-
-    res.end(pdfBuffer);
+    if (!proposal.pdfUrl) {
+      throw new NotFoundException(`PDF for proposal with ID "${id}" not found`);
+    }
+    res.redirect(proposal.pdfUrl);
   }
 
   @Get(':id/logs')

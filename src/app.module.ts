@@ -9,7 +9,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ProposalsModule } from './modules/proposals/proposals.module';
 import * as redisStore from 'cache-manager-redis-store';
 import { LogMiddleware } from './common/middlewares';
-import { LoggerService } from './common/services';
+import { LoggerService, S3Service } from './common/services';
 import { ProposalItemsModule } from './modules/proposal-items/proposal-items.module';
 
 @Module({
@@ -32,7 +32,7 @@ import { ProposalItemsModule } from './modules/proposal-items/proposal-items.mod
     ProposalItemsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, LoggerService],
+  providers: [AppService, LoggerService, S3Service],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProposalItemDto, UpdateProposalItemDto } from './dto';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { ProposalItem } from './entities';
+import { ProposalsService } from '../proposals/proposals.service';
 
 @Injectable()
 export class ProposalItemsService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private proposalsService: ProposalsService,
+  ) {}
 
   private get proposalItemRepository() {
     return this.prismaService.proposalItem;
@@ -19,7 +23,7 @@ export class ProposalItemsService {
     proposalId: string,
     createProposalItemDto: CreateProposalItemDto,
   ): Promise<ProposalItem> {
-    const proposal = await this.proposalItemRepository.findUnique({
+    const proposal = await this.proposalRepository.findUnique({
       where: { id: proposalId },
     });
 
@@ -39,6 +43,27 @@ export class ProposalItemsService {
     });
 
     await this.updateProposalTotal(proposalId);
+
+    const updatedProposal = await this.proposalsService.findOne(proposalId);
+    const { s3Url, pdfBuffer } = await this.proposalsService['generateAndUploadPdf'](proposalId);
+
+    if (updatedProposal.client.email) {
+      await this.proposalsService['sendMailService'].send({
+        to: updatedProposal.client.email,
+        subject: 'Proposta Atualizada - Novo Item Adicionado',
+        template: 'new-proposal.pug',
+        parametros: {
+          proposal: updatedProposal,
+        },
+        attachments: [
+          {
+            filename: `proposta-${updatedProposal.id}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+    }
 
     return item;
   }
@@ -91,6 +116,28 @@ export class ProposalItemsService {
 
     await this.updateProposalTotal(proposalId);
 
+    const updatedProposal = await this.proposalsService.findOne(proposalId);
+
+    const { s3Url, pdfBuffer } = await this.proposalsService['generateAndUploadPdf'](proposalId);
+
+    if (updatedProposal.client.email) {
+      await this.proposalsService['sendMailService'].send({
+        to: updatedProposal.client.email,
+        subject: 'Proposta Atualizada - Item Modificado',
+        template: 'new-proposal.pug',
+        parametros: {
+          proposal: updatedProposal,
+        },
+        attachments: [
+          {
+            filename: `proposta-${updatedProposal.id}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+    }
+
     return updatedItem;
   }
 
@@ -110,6 +157,27 @@ export class ProposalItemsService {
     });
 
     await this.updateProposalTotal(proposalId);
+
+    const updatedProposal = await this.proposalsService.findOne(proposalId);
+    const { s3Url, pdfBuffer } = await this.proposalsService['generateAndUploadPdf'](proposalId);
+
+    if (updatedProposal.client.email) {
+      await this.proposalsService['sendMailService'].send({
+        to: updatedProposal.client.email,
+        subject: 'Proposta Atualizada',
+        template: 'new-proposal.pug',
+        parametros: {
+          proposal: updatedProposal,
+        },
+        attachments: [
+          {
+            filename: `proposta-${updatedProposal.id}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+    }
 
     return deletedItem;
   }

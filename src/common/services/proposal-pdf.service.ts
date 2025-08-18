@@ -2,21 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Client, Proposal, ProposalItem } from '@prisma/client';
 import PDFDocument from 'pdfkit';
 
-// O tipo agora usa diretamente os modelos importados do Prisma Client.
 type FullProposal = Proposal & { items: ProposalItem[]; client: Client };
 
-// Constantes de estilo para fácil manutenção
 const FONT_NORMAL = 'Helvetica';
 const FONT_BOLD = 'Helvetica-Bold';
 const MARGIN = 50;
 
 @Injectable()
 export class ProposalPdfService {
-  /**
-   * Gera um buffer de PDF para uma proposta comercial.
-   * @param proposal O objeto da proposta completo com itens e cliente, conforme o schema Prisma.
-   * @returns Uma Promise que resolve com o Buffer do PDF.
-   */
   async generate(proposal: FullProposal): Promise<Buffer> {
     const doc = new PDFDocument({
       size: 'A4',
@@ -40,10 +33,6 @@ export class ProposalPdfService {
     });
   }
 
-  /**
-   * Formata um número inteiro (centavos) para uma string de moeda BRL.
-   * Ex: 15050 -> "R$ 150,50"
-   */
   private _formatCurrency(cents: number): string {
     const valueInReal = cents / 100;
     return valueInReal.toLocaleString('pt-BR', {
@@ -112,13 +101,8 @@ export class ProposalPdfService {
     let y = tableTop + 25;
 
     proposal.items.forEach((item) => {
-      // ======================= INÍCIO DA MUDANÇA =======================
-      // Adicionamos uma verificação para não exibir a palavra "string" no PDF.
-      // Se a descrição for literalmente "string", exibimos "---" no lugar.
-      // Esta é uma medida paliativa. A correção ideal é na fonte dos dados.
       const descriptionText =
         item.description === 'string' ? '---' : item.description;
-      // ======================== FIM DA MUDANÇA =========================
 
       const descriptionHeight = doc.heightOfString(descriptionText, {
         width: 250,
@@ -141,7 +125,6 @@ export class ProposalPdfService {
         doc,
         y,
         false,
-        // Usamos a nova variável 'descriptionText' aqui
         { text: descriptionText, options: { width: 250 } },
         { text: item.quantity.toString(), options: { align: 'right' } },
         {

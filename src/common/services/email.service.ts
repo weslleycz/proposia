@@ -18,6 +18,7 @@ export class EmailService {
     subject: string,
     text: string,
     html?: string,
+    attachments?: { filename: string; content: Buffer; contentType: string }[],
   ): Promise<void> {
     await this.transporter.sendMail({
       from: '"No-Reply" <no-reply@mailhog.local>',
@@ -25,6 +26,7 @@ export class EmailService {
       subject,
       text,
       html,
+      attachments,
     });
   }
 }

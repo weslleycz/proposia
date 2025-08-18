@@ -39,6 +39,7 @@ export class ProposalItemsController {
     @Param('proposalId') proposalId: string,
     @Body() createProposalItemDto: CreateProposalItemDto,
   ) {
+    
     return this.proposalItemsService.create(proposalId, createProposalItemDto);
   }
 
@@ -85,8 +86,6 @@ export class ProposalItemsController {
     @Param('proposalId') proposalId: string,
     @Param('id') id: string,
   ) {
-    console.log(34433434);
-    
     await this.proposalItemsService.remove(proposalId, id);
   }
 }

@@ -10,7 +10,8 @@ interface SendMailData {
   to: string;
   subject: string;
   template: string;
-  parametros?: Record<string, any>; 
+  parametros?: Record<string, any>;
+  attachments?: { filename: string; content: Buffer; contentType: string }[];
 }
 
 @Global()
@@ -29,6 +30,7 @@ export class SendMailService {
       data.subject,
       '',
       html,
+      data.attachments,
     );
   }
 

@@ -41,5 +41,8 @@ html
           p Valor Total da Proposta: R$ #{(proposal.totalAmount / 100 || 0).toFixed(2)}
 
       p Para mais detalhes, acesse nosso portal.
+      p
+        strong Link para o PDF da Proposta:
+        a(href=proposal.pdfUrl) Clique aqui para visualizar o PDF
       p Atenciosamente,
       p Equipe Proposia
