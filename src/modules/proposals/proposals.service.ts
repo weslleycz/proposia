@@ -21,6 +21,7 @@ import {
   S3Service,
   SendMailService,
 } from 'src/common/services';
+import { FindDeletedProposalsDto } from './dto/find-deleted-proposals.dto';
 
 const proposalWithRelations = Prisma.validator<Prisma.ProposalDefaultArgs>()({
   include: { user: true, client: true, items: true },
@@ -59,7 +60,7 @@ export class ProposalsService {
 
   private async generateAndUploadPdf(proposalId: string): Promise<{ s3Url: string; pdfBuffer: Buffer }> {
     const proposal = await this.prisma.proposal.findUnique({
-      where: { id: proposalId },
+      where: { id: proposalId, deletedAt: null },
       include: { user: true, client: true, items: true },
     });
 
@@ -167,6 +168,7 @@ export class ProposalsService {
       skip,
       take: limit,
       where: {
+        deletedAt: null,
         ...(title && { title: { contains: title, mode: 'insensitive' } }),
         ...(status && { status }),
         ...(clientId && { clientId }),
@@ -184,7 +186,7 @@ export class ProposalsService {
 
   async findOne(id: string) {
     const proposal = await this.prisma.proposal.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: { user: {
         select: { id: true, name: true, email: true },
       }, client: true, items: true },
@@ -215,7 +217,7 @@ export class ProposalsService {
     userId: string,
   ): Promise<Proposal> {
     const existingProposal = await this.prisma.proposal.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: { items: true },
     });
 
@@ -311,20 +313,151 @@ export class ProposalsService {
 
   async remove(id: string, userId: string): Promise<Proposal> {
     const existingProposal = await this.prisma.proposal.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
     });
 
     if (!existingProposal) {
       throw new NotFoundException(`Proposal with ID "${id}" not found`);
     }
 
-    const deletedProposal = await this.prisma.proposal.delete({
+    const deletedProposal = await this.prisma.proposal.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
 
     await this.logProposal(id, userId, 'DELETED', existingProposal);
     await this.cacheManager.del(`proposal_logs_${id}`);
 
     return deletedProposal;
+  }
+
+  async restore(id: string, userId: string): Promise<Proposal> {
+    const existingProposal = await this.prisma.proposal.findUnique({
+      where: { id, deletedAt: { not: null } },
+    });
+
+    if (!existingProposal) {
+      throw new NotFoundException(
+        `Deleted proposal with ID "${id}" not found`,
+      );
+    }
+
+    const restoredProposal = await this.prisma.proposal.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    await this.logProposal(
+      id,
+      userId,
+      'RESTORED',
+      existingProposal,
+      restoredProposal,
+    );
+    await this.cacheManager.del(`proposal_logs_${id}`);
+    await this.cacheManager.del('deleted_proposals');
+
+    return restoredProposal;
+  }
+
+  async revert(
+    proposalId: string,
+    logId: string,
+    userId: string,
+  ): Promise<Proposal> {
+    const proposalLog = await this.prisma.proposalLog.findUnique({
+      where: { id: logId },
+    });
+
+    if (!proposalLog || proposalLog.proposalId !== proposalId) {
+      throw new NotFoundException(
+        `Log with ID "${logId}" not found for proposal "${proposalId}"`,
+      );
+    }
+
+    const proposalToRevert = await this.prisma.proposal.findUnique({
+      where: { id: proposalId, deletedAt: null },
+    });
+
+    if (!proposalToRevert) {
+      throw new NotFoundException(`Proposal with ID "${proposalId}" not found`);
+    }
+
+    const targetState = proposalLog.newData as any;
+    if (!targetState || !targetState.items) {
+      throw new Error('Log does not contain valid data to revert to.');
+    }
+
+    const revertedProposal = await this.prisma.$transaction(async (tx) => {
+      await tx.proposalItem.deleteMany({ where: { proposalId } });
+
+      const newItems = targetState.items.map((item: any) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.quantity * item.unitPrice,
+      }));
+
+      const reverted = await tx.proposal.update({
+        where: { id: proposalId },
+        data: {
+          title: targetState.title,
+          description: targetState.description,
+          status: targetState.status,
+          version: proposalToRevert.version + 1,
+          items: {
+            createMany: {
+              data: newItems,
+            },
+          },
+        },
+        include: { items: true },
+      });
+
+      const totalAmount = reverted.items.reduce(
+        (sum, item) => sum + item.total,
+        0,
+      );
+
+      return tx.proposal.update({
+        where: { id: proposalId },
+        data: { totalAmount },
+      });
+    });
+
+    await this.logProposal(
+      proposalId,
+      userId,
+      'REVERTED',
+      proposalToRevert,
+      revertedProposal,
+    );
+
+    await this.cacheManager.del(`proposal_logs_${proposalId}`);
+
+    return revertedProposal;
+  }
+
+  async findDeleted(query: FindDeletedProposalsDto): Promise<Proposal[]> {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const { title } = query;
+
+    return this.prisma.proposal.findMany({
+      skip,
+      take: limit,
+      where: {
+        deletedAt: { not: null },
+        ...(title && { title: { contains: title, mode: 'insensitive' } }),
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        client: true,
+        items: true,
+      },
+    });
   }
 }

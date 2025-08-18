@@ -51,6 +51,7 @@ model Proposal {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   userId   String
   clientId String
@@ -93,6 +94,8 @@ enum ProposalAction {
   STATUS_CHANGED
   VERSIONED
   DELETED
+  RESTORED
+  REVERTED
 }
 
 enum Role {
