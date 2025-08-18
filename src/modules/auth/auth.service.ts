@@ -1,9 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { getAuthConfig } from 'src/common/config';
 import { JwtPayload } from 'src/common/interfaces';
-import { BcryptService, PrismaService } from 'src/common/services';
+import { BcryptService, PrismaService, SendMailService } from 'src/common/services';
 import { LoginResponseDto } from './dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -14,6 +14,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly bcryptService: BcryptService,
+    private readonly sendMailService: SendMailService,
   ) {}
 
   private get userRepository() {
@@ -85,5 +86,50 @@ export class AuthService {
       refreshToken,
       user: { id: userId, email },
     };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.userRepository.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const authConfig = getAuthConfig(this.configService);
+    const payload = { sub: user.id };
+
+    const token = await this.jwtService.signAsync(payload, {
+      secret: authConfig.jwtPasswordResetSecret,
+      expiresIn: authConfig.jwtPasswordResetExpiration,
+    });
+
+    await this.sendMailService.send({
+      to: user.email,
+      subject: 'Redefinição de Senha',
+      template: 'reset-password.pug',
+      parametros: {
+        name: user.name,
+        token,
+      },
+    });
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const authConfig = getAuthConfig(this.configService);
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: authConfig.jwtPasswordResetSecret,
+      });
+
+      const passwordHash = await this.bcryptService.hashPassword(newPassword);
+
+      await this.userRepository.update({
+        where: { id: payload.sub },
+        data: { passwordHash },
+      });
+    } catch (error) {
+      throw new BadRequestException('Token inválido ou expirado');
+    }
   }
 }

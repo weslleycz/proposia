@@ -9,12 +9,12 @@ import passport from 'passport';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-    app.use(passport.initialize())
+  app.use(passport.initialize());
 
   const options = new DocumentBuilder()
     .setTitle('API Documentation')
     .setVersion('1.0')
-     .addBearerAuth()
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, options, {

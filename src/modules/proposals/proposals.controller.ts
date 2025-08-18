@@ -70,7 +70,7 @@ export class ProposalsController {
 
   @Get(':id')
   @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Obter uma proposta por ID' })
   @ApiResponse({ status: 200, description: 'Retorna uma única proposta.' })
@@ -81,6 +81,8 @@ export class ProposalsController {
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Atualizar uma proposta por ID' })
   @ApiResponse({
@@ -93,11 +95,14 @@ export class ProposalsController {
   update(
     @Param('id') id: string,
     @Body() updateProposalDto: UpdateProposalDto,
+    @Req() req: RequestWithUser,
   ) {
     return this.proposalsService.update(id, updateProposalDto);
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Excluir uma proposta por ID' })
   @ApiResponse({
@@ -111,6 +116,8 @@ export class ProposalsController {
   }
 
   @Post(':id/version')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SALESPERSON)
   @ApiOperation({ summary: 'Criar uma nova versão de uma proposta' })
   @ApiResponse({
