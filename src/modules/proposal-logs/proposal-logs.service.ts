@@ -6,7 +6,11 @@ import { CreateProposalLogDto } from './dto';
 export class ProposalLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private get proposalLogRepository() {
+    return this.prisma.proposalLog;
+  }
+
   create(createProposalLogDto: CreateProposalLogDto) {
-    return this.prisma.proposalLog.create({ data: createProposalLogDto });
+    return this.proposalLogRepository.create({ data: createProposalLogDto });
   }
 }

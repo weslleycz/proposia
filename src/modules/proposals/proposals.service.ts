@@ -34,7 +34,7 @@ export type ProposalWithRelations = Prisma.ProposalGetPayload<
 @Injectable()
 export class ProposalsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly proposalLogsService: ProposalLogsService,
     private readonly sendMailService: SendMailService,
     private readonly proposalPdfService: ProposalPdfService,
@@ -42,46 +42,20 @@ export class ProposalsService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  private async logProposal(
-    proposalId: string,
-    userId: string,
-    action: ProposalAction,
-    oldData?: any,
-    newData?: any,
-  ) {
-    await this.proposalLogsService.create({
-      proposalId,
-      changedById: userId,
-      action,
-      oldData,
-      newData,
-    });
+  private get proposalRepository() {
+    return this.prismaService.proposal;
   }
 
-  private async generateAndUploadPdf(proposalId: string): Promise<{ s3Url: string; pdfBuffer: Buffer }> {
-    const proposal = await this.prisma.proposal.findUnique({
-      where: { id: proposalId, deletedAt: null },
-      include: { user: true, client: true, items: true },
-    });
+  private get clientRepository() {
+    return this.prismaService.client;
+  }
 
-    if (!proposal) {
-      throw new NotFoundException(`Proposal with ID "${proposalId}" not found`);
-    }
+  private get proposalLogRepository() {
+    return this.prismaService.proposalLog;
+  }
 
-    const pdfBuffer = await this.proposalPdfService.generate(proposal);
-    const s3Key = `proposals/${proposal.id}.pdf`;
-    const s3Url = await this.s3Service.uploadFile(
-      s3Key,
-      pdfBuffer,
-      'application/pdf',
-    );
-
-    await this.prisma.proposal.update({
-      where: { id: proposalId },
-      data: { pdfUrl: s3Url },
-    });
-
-    return { s3Url, pdfBuffer };
+  private get proposalItemRepository() {
+    return this.prismaService.proposalItem;
   }
 
   async create(
@@ -90,7 +64,7 @@ export class ProposalsService {
   ): Promise<Proposal> {
     const { clientId, items, ...rest } = createProposalDto;
 
-    const clientExists = await this.prisma.client.findUnique({
+    const clientExists = await this.clientRepository.findUnique({
       where: { id: clientId },
     });
 
@@ -102,7 +76,7 @@ export class ProposalsService {
       ? items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
       : 0;
 
-    const proposal = await this.prisma.proposal.create({
+    const proposal = await this.proposalRepository.create({
       data: {
         ...rest,
         totalAmount: calculatedTotalAmount,
@@ -131,7 +105,7 @@ export class ProposalsService {
     await this.cacheManager.del(`proposal_logs_${proposal.id}`);
 
     const { s3Url, pdfBuffer } = await this.generateAndUploadPdf(proposal.id);
-    const updatedProposal = await this.prisma.proposal.update({
+    const updatedProposal = await this.proposalRepository.update({
       where: { id: proposal.id },
       data: { pdfUrl: s3Url },
       include: { items: true, client: true },
@@ -164,7 +138,7 @@ export class ProposalsService {
     const skip = (page - 1) * limit;
     const { title, status, clientId, userId } = query;
 
-    return this.prisma.proposal.findMany({
+    return this.proposalRepository.findMany({
       skip,
       take: limit,
       where: {
@@ -185,11 +159,15 @@ export class ProposalsService {
   }
 
   async findOne(id: string) {
-    const proposal = await this.prisma.proposal.findUnique({
+    const proposal = await this.proposalRepository.findUnique({
       where: { id, deletedAt: null },
-      include: { user: {
-        select: { id: true, name: true, email: true },
-      }, client: true, items: true },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        client: true,
+        items: true,
+      },
     });
     if (!proposal) {
       throw new NotFoundException(`Proposal with ID "${id}" not found`);
@@ -200,7 +178,7 @@ export class ProposalsService {
   @CacheTTL(300)
   @CacheKey('proposal_logs_')
   async findLogsByProposalId(proposalId: string) {
-    return this.prisma.proposalLog.findMany({
+    return this.proposalLogRepository.findMany({
       where: { proposalId },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -216,7 +194,7 @@ export class ProposalsService {
     updateProposalDto: UpdateProposalDto,
     userId: string,
   ): Promise<Proposal> {
-    const existingProposal = await this.prisma.proposal.findUnique({
+    const existingProposal = await this.proposalRepository.findUnique({
       where: { id, deletedAt: null },
       include: { items: true },
     });
@@ -227,7 +205,7 @@ export class ProposalsService {
 
     const { items, ...rest } = updateProposalDto;
 
-    const updatedProposal = await this.prisma.proposal.update({
+    const updatedProposal = await this.proposalRepository.update({
       where: { id },
       data: {
         ...rest,
@@ -252,7 +230,7 @@ export class ProposalsService {
       include: { items: true, client: true },
     });
 
-    const recalculatedProposal = await this.prisma.proposal.findUnique({
+    const recalculatedProposal = await this.proposalRepository.findUnique({
       where: { id },
       include: { items: true },
     });
@@ -268,12 +246,13 @@ export class ProposalsService {
       0,
     );
 
-    await this.prisma.proposal.update({
+    await this.proposalRepository.update({
       where: { id },
       data: { totalAmount: newTotalAmount },
     });
 
-    const { s3Url: newS3Url, pdfBuffer: newPdfBuffer } = await this.generateAndUploadPdf(id);
+    const { s3Url: newS3Url, pdfBuffer: newPdfBuffer } =
+      await this.generateAndUploadPdf(id);
 
     if (items !== undefined && updatedProposal.client.email) {
       const total = updatedProposal.items.reduce(
@@ -312,7 +291,7 @@ export class ProposalsService {
   }
 
   async remove(id: string, userId: string): Promise<Proposal> {
-    const existingProposal = await this.prisma.proposal.findUnique({
+    const existingProposal = await this.proposalRepository.findUnique({
       where: { id, deletedAt: null },
     });
 
@@ -320,7 +299,7 @@ export class ProposalsService {
       throw new NotFoundException(`Proposal with ID "${id}" not found`);
     }
 
-    const deletedProposal = await this.prisma.proposal.update({
+    const deletedProposal = await this.proposalRepository.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
@@ -332,17 +311,15 @@ export class ProposalsService {
   }
 
   async restore(id: string, userId: string): Promise<Proposal> {
-    const existingProposal = await this.prisma.proposal.findUnique({
+    const existingProposal = await this.proposalRepository.findUnique({
       where: { id, deletedAt: { not: null } },
     });
 
     if (!existingProposal) {
-      throw new NotFoundException(
-        `Deleted proposal with ID "${id}" not found`,
-      );
+      throw new NotFoundException(`Deleted proposal with ID "${id}" not found`);
     }
 
-    const restoredProposal = await this.prisma.proposal.update({
+    const restoredProposal = await this.proposalRepository.update({
       where: { id },
       data: { deletedAt: null },
     });
@@ -365,7 +342,7 @@ export class ProposalsService {
     logId: string,
     userId: string,
   ): Promise<Proposal> {
-    const proposalLog = await this.prisma.proposalLog.findUnique({
+    const proposalLog = await this.proposalLogRepository.findUnique({
       where: { id: logId },
     });
 
@@ -375,7 +352,7 @@ export class ProposalsService {
       );
     }
 
-    const proposalToRevert = await this.prisma.proposal.findUnique({
+    const proposalToRevert = await this.proposalRepository.findUnique({
       where: { id: proposalId, deletedAt: null },
     });
 
@@ -388,7 +365,7 @@ export class ProposalsService {
       throw new Error('Log does not contain valid data to revert to.');
     }
 
-    const revertedProposal = await this.prisma.$transaction(async (tx) => {
+    const revertedProposal = await this.prismaService.$transaction(async (tx) => {
       await tx.proposalItem.deleteMany({ where: { proposalId } });
 
       const newItems = targetState.items.map((item: any) => ({
@@ -444,7 +421,7 @@ export class ProposalsService {
     const skip = (page - 1) * limit;
     const { title } = query;
 
-    return this.prisma.proposal.findMany({
+    return this.proposalRepository.findMany({
       skip,
       take: limit,
       where: {
@@ -459,5 +436,49 @@ export class ProposalsService {
         items: true,
       },
     });
+  }
+
+  private async logProposal(
+    proposalId: string,
+    userId: string,
+    action: ProposalAction,
+    oldData?: any,
+    newData?: any,
+  ) {
+    await this.proposalLogsService.create({
+      proposalId,
+      changedById: userId,
+      action,
+      oldData,
+      newData,
+    });
+  }
+
+  private async generateAndUploadPdf(
+    proposalId: string,
+  ): Promise<{ s3Url: string; pdfBuffer: Buffer }> {
+    const proposal = await this.proposalRepository.findUnique({
+      where: { id: proposalId, deletedAt: null },
+      include: { user: true, client: true, items: true },
+    });
+
+    if (!proposal) {
+      throw new NotFoundException(`Proposal with ID "${proposalId}" not found`);
+    }
+
+    const pdfBuffer = await this.proposalPdfService.generate(proposal);
+    const s3Key = `proposals/${proposal.id}.pdf`;
+    const s3Url = await this.s3Service.uploadFile(
+      s3Key,
+      pdfBuffer,
+      'application/pdf',
+    );
+
+    await this.proposalRepository.update({
+      where: { id: proposalId },
+      data: { pdfUrl: s3Url },
+    });
+
+    return { s3Url, pdfBuffer };
   }
 }
