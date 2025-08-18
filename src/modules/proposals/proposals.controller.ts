@@ -115,21 +115,6 @@ export class ProposalsController {
     return this.proposalsService.remove(id, req.user.userId);
   }
 
-  @Post(':id/version')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SALESPERSON)
-  @ApiOperation({ summary: 'Criar uma nova versão de uma proposta' })
-  @ApiResponse({
-    status: 201,
-    description: 'Uma nova versão da proposta foi criada.',
-  })
-  @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
-  @ApiParam({ name: 'id', description: 'ID da proposta para versionar' })
-  version(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.proposalsService.version(id, req.user.userId);
-  }
-
   @Get(':id/pdf')
   async getPdf(@Param('id') id: string, @Res() res: express.Response) {
     const proposal = await this.proposalsService.findOne(id);

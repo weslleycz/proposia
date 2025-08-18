@@ -5,6 +5,7 @@ import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { FindProposalsDto } from './dto/find-proposals.dto';
 import { Prisma, Proposal, ProposalAction, ProposalStatus } from '@prisma/client';
 import { ProposalLogsService } from '../proposal-logs/proposal-logs.service';
+import { SendMailService } from 'src/common/services/send-mail.service';
 
 const proposalWithRelations = Prisma.validator<Prisma.ProposalDefaultArgs>()({
   include: { user: true, client: true, items: true },
@@ -19,6 +20,7 @@ export class ProposalsService {
   constructor(
     private prisma: PrismaService,
     private proposalLogsService: ProposalLogsService,
+    private sendMailService: SendMailService,
   ) {}
 
   private async logProposal(
@@ -72,10 +74,24 @@ export class ProposalsService {
             }
           : {}),
       },
-      include: { items: true },
+      include: { items: true, client: true },
     });
 
+    const total = proposal.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+    (proposal as any).total = total;
+
     await this.logProposal(proposal.id, userId, 'CREATED', null, proposal);
+
+    if (proposal.client.email) {
+      await this.sendMailService.send({
+        to: proposal.client.email,
+        subject: 'Nova proposta recebida',
+        template: 'new-proposal.pug',
+        parametros: {
+          proposal,
+        },
+      });
+    }
 
     return proposal;
   }
@@ -179,49 +195,4 @@ export class ProposalsService {
     return deletedProposal;
   }
 
-  async version(id: string, userId: string): Promise<Proposal> {
-    const originalProposal = await this.prisma.proposal.findUnique({
-      where: { id },
-      include: { items: true },
-    });
-
-    if (!originalProposal) {
-      throw new NotFoundException(`Proposal with ID "${id}" not found`);
-    }
-
-    const newVersion = await this.prisma.proposal.create({
-      data: {
-        title: originalProposal.title,
-        description: originalProposal.description,
-        totalAmount: originalProposal.totalAmount,
-        status: ProposalStatus.DRAFT,
-        version: originalProposal.version + 1,
-        pdfUrl: null,
-        userId: originalProposal.userId,
-        clientId: originalProposal.clientId,
-        items: {
-          createMany: {
-            data: originalProposal.items.map((item) => ({
-              description: item.description,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              total: item.total,
-            })),
-          },
-        },
-        parentId: id,
-      },
-      include: { items: true },
-    });
-
-    await this.logProposal(
-      newVersion.id,
-      userId,
-      'VERSIONED',
-      originalProposal,
-      newVersion,
-    );
-
-    return newVersion;
-  }
 }

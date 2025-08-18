@@ -58,9 +58,6 @@ model Proposal {
   client   Client         @relation(fields: [clientId], references: [id])
   items    ProposalItem[]
 
-  parentId    String?
-  parent      Proposal?     @relation("ProposalVersions", fields: [parentId], references: [id])
-  versions    Proposal[]    @relation("ProposalVersions")
   ProposalLog ProposalLog[]
 }
 
