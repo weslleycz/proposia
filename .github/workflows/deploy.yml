@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: QUAY
 
     env:
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
