@@ -27,6 +27,11 @@ jobs:
       - name: Make script executable
         run: chmod +x ./update-image.sh
 
-      - name: Run Docker build and push script
-        run: ./update-image.sh ${{ secrets.QUAY_USERNAME }} ${{ secrets.QUAY_PASSWORD }} ${{ secrets.IMAGE_NAME }} ${{ secrets.QUAY_REPO }} latest linux/amd64
+      - name: Build and push Docker image
+        run: |
+          echo "${{ secrets.QUAY_PASSWORD }}" | docker login quay.io -u "${{ secrets.QUAY_USERNAME }}" --password-stdin
+          docker buildx build --platform linux/amd64 -t ${{ secrets.IMAGE_NAME }}:latest --load .
+          docker tag ${{ secrets.IMAGE_NAME }}:latest ${{ secrets.QUAY_REPO }}:latest
+          docker push ${{ secrets.QUAY_REPO }}:latest
+          docker logout quay.io
 
