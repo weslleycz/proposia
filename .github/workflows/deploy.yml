@@ -27,6 +27,13 @@ jobs:
       - name: Make script executable
         run: chmod +x ./update-image.sh
 
+      - name: Debug environment variables
+        run: |
+          echo "QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}"
+          echo "IMAGE_NAME: ${{ secrets.IMAGE_NAME }}"
+          echo "QUAY_REPO: ${{ secrets.QUAY_REPO }}"
+
+
       - name: Build and push Docker image
         run: |
           echo "${{ secrets.QUAY_PASSWORD }}" | docker login quay.io -u "${{ secrets.QUAY_USERNAME }}" --password-stdin
