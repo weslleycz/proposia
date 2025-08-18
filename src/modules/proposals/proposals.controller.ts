@@ -97,7 +97,7 @@ export class ProposalsController {
     @Body() updateProposalDto: UpdateProposalDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.proposalsService.update(id, updateProposalDto);
+    return this.proposalsService.update(id, updateProposalDto, req.user.userId);
   }
 
   @Delete(':id')
@@ -111,8 +111,8 @@ export class ProposalsController {
   })
   @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
   @ApiParam({ name: 'id', description: 'ID da proposta a ser excluída' })
-  remove(@Param('id') id: string) {
-    return this.proposalsService.remove(id);
+  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.proposalsService.remove(id, req.user.userId);
   }
 
   @Post(':id/version')
@@ -126,8 +126,8 @@ export class ProposalsController {
   })
   @ApiResponse({ status: 404, description: 'Proposta não encontrada.' })
   @ApiParam({ name: 'id', description: 'ID da proposta para versionar' })
-  version(@Param('id') id: string) {
-    return this.proposalsService.version(id);
+  version(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.proposalsService.version(id, req.user.userId);
   }
 
   @Get(':id/pdf')

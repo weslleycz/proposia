@@ -24,8 +24,6 @@ export class ClientsService {
     return client;
   }
 
-  // @CacheTTL(300) // 5 minutes
-  // @CacheKey('all_clients')
   async findAll(query: FindClientsDto) {
     const { page = 1, pageSize = 10, name, email, phone, cnpjCpf, address } = query;
 
@@ -64,7 +62,7 @@ export class ClientsService {
     return { clients, total, page, pageSize };
   }
 
-  @CacheTTL(300) // 5 minutes
+  @CacheTTL(300)
   @CacheKey('client_')
   async findOne(id: string) {
     const client = await this.clientRepository.findUnique({ where: { id } });

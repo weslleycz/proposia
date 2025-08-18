@@ -3,7 +3,8 @@ import { PrismaService } from 'src/common/services/prisma.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
 import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { FindProposalsDto } from './dto/find-proposals.dto';
-import { Prisma, Proposal, ProposalStatus } from '@prisma/client';
+import { Prisma, Proposal, ProposalAction, ProposalStatus } from '@prisma/client';
+import { ProposalLogsService } from '../proposal-logs/proposal-logs.service';
 
 const proposalWithRelations = Prisma.validator<Prisma.ProposalDefaultArgs>()({
   include: { user: true, client: true, items: true },
@@ -15,23 +16,24 @@ export type ProposalWithRelations = Prisma.ProposalGetPayload<
 
 @Injectable()
 export class ProposalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private proposalLogsService: ProposalLogsService,
+  ) {}
 
   private async logProposal(
     proposalId: string,
     userId: string,
-    action: Prisma.ProposalLogCreateInput['action'],
+    action: ProposalAction,
     oldData?: any,
     newData?: any,
   ) {
-    await this.prisma.proposalLog.create({
-      data: {
-        proposalId,
-        changedById: userId,
-        action,
-        oldData: oldData ? JSON.stringify(oldData) : undefined,
-        newData: newData ? JSON.stringify(newData) : undefined,
-      },
+    await this.proposalLogsService.create({
+      proposalId,
+      changedById: userId,
+      action,
+      oldData,
+      newData,
     });
   }
 
@@ -111,9 +113,11 @@ export class ProposalsService {
   async update(
     id: string,
     updateProposalDto: UpdateProposalDto,
+    userId: string,
   ): Promise<Proposal> {
     const existingProposal = await this.prisma.proposal.findUnique({
       where: { id },
+      include: { items: true },
     });
 
     if (!existingProposal) {
@@ -122,7 +126,7 @@ export class ProposalsService {
 
     const { items, ...rest } = updateProposalDto;
 
-    return this.prisma.proposal.update({
+    const updatedProposal = await this.prisma.proposal.update({
       where: { id },
       data: {
         ...rest,
@@ -145,9 +149,19 @@ export class ProposalsService {
       },
       include: { items: true },
     });
+
+    await this.logProposal(
+      id,
+      userId,
+      'UPDATED',
+      existingProposal,
+      updatedProposal,
+    );
+
+    return updatedProposal;
   }
 
-  async remove(id: string): Promise<Proposal> {
+  async remove(id: string, userId: string): Promise<Proposal> {
     const existingProposal = await this.prisma.proposal.findUnique({
       where: { id },
     });
@@ -155,12 +169,17 @@ export class ProposalsService {
     if (!existingProposal) {
       throw new NotFoundException(`Proposal with ID "${id}" not found`);
     }
-    return this.prisma.proposal.delete({
+
+    const deletedProposal = await this.prisma.proposal.delete({
       where: { id },
     });
+
+    await this.logProposal(id, userId, 'DELETED', existingProposal);
+
+    return deletedProposal;
   }
 
-  async version(id: string): Promise<Proposal> {
+  async version(id: string, userId: string): Promise<Proposal> {
     const originalProposal = await this.prisma.proposal.findUnique({
       where: { id },
       include: { items: true },
@@ -190,9 +209,18 @@ export class ProposalsService {
             })),
           },
         },
+        parentId: id,
       },
       include: { items: true },
     });
+
+    await this.logProposal(
+      newVersion.id,
+      userId,
+      'VERSIONED',
+      originalProposal,
+      newVersion,
+    );
 
     return newVersion;
   }
