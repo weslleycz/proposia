@@ -1,5 +1,7 @@
 # Proposia API
 
+Este projeto é uma API RESTful construída com NestJS, projetada para gerenciar propostas comerciais de forma eficiente. A aplicação oferece funcionalidades completas para autenticação de usuários (com JWT e refresh tokens), gerenciamento de usuários, clientes, propostas e itens de propostas. Além disso, inclui um sistema de log para rastrear ações em propostas e a capacidade de gerar PDFs de propostas. A persistência de dados é feita com Prisma e SQLite, e a aplicação é conteinerizada com Docker para facilitar o desenvolvimento e a implantação.
+
 ## Pré-requisitos
 
 - Node.js

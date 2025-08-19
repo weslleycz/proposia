@@ -1,0 +1,21 @@
+{
+  "jsc": {
+    "target": "es2016",
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false,
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true
+    },
+    "baseUrl": "./src",
+    "paths": {
+      "src/*": ["./*"]
+    }
+  },
+  "module": {
+    "type": "commonjs"
+  },
+  "sourceMaps": true
+}
