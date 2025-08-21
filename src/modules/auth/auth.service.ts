@@ -15,6 +15,7 @@ import {
 } from 'src/common/services';
 import { LoginResponseDto } from './dto';
 import { LoginDto } from './dto/login.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -69,6 +70,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        role: user.role,
       },
     };
   }
@@ -90,10 +92,12 @@ export class AuthService {
       expiresIn: authConfig.jwtRefreshExpiration,
     });
 
+    const user = await this.userRepository.findUnique({ where: { email } });
+
     return {
       accessToken,
       refreshToken,
-      user: { id: userId, email },
+      user: { id: userId, email, role: user?.role as Role },
     };
   }
 

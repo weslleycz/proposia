@@ -5,11 +5,23 @@ import { UserEntity } from './modules/users/entities/user.entity';
 import { ClientEntity } from './modules/clients/entities/client.entity';
 import { ProposalItem } from './modules/proposal-items/entities/proposal-item.entity';
 import passport from 'passport';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const corsOptions: CorsOptions = {
+    origin: [
+      'http://localhost:5173',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  };
+
   app.use(passport.initialize());
+
+  app.enableCors(corsOptions);
 
   const options = new DocumentBuilder()
     .setTitle('API Documentation')

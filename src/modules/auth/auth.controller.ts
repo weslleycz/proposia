@@ -30,8 +30,8 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
-  async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
-    return this.authService.login(dto);
+  async login(@Body() data: LoginDto): Promise<LoginResponseDto> {
+    return this.authService.login(data);
   }
 
   @UseGuards(JwtRefreshAuthGuard)
