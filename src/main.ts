@@ -6,14 +6,13 @@ import { ClientEntity } from './modules/clients/entities/client.entity';
 import { ProposalItem } from './modules/proposal-items/entities/proposal-item.entity';
 import passport from 'passport';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { apiReference } from '@scalar/nestjs-api-reference';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const corsOptions: CorsOptions = {
-    origin: [
-      'http://localhost:5173',
-    ],
+    origin: ['http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -34,6 +33,13 @@ async function bootstrap() {
   });
 
   SwaggerModule.setup('/api', app, document);
+
+  app.use(
+    '/reference',
+    apiReference({
+      content: document,
+    }),
+  );
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

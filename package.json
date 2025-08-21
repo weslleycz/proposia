@@ -36,6 +36,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.0",
     "@prisma/client": "^6.14.0",
+    "@scalar/nestjs-api-reference": "^0.5.12",
     "bcrypt": "^6.0.0",
     "cache-manager": "^7.1.1",
     "cache-manager-redis-store": "^3.0.1",
