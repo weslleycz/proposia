@@ -116,13 +116,15 @@ export class AuthService {
       expiresIn: authConfig.jwtPasswordResetExpiration,
     });
 
+    const link = `http://localhost:5173/reset-password/${token}`;
+
     await this.sendMailService.send({
       to: user.email,
       subject: 'Redefinição de Senha',
       template: 'reset-password.pug',
       parametros: {
         name: user.name,
-        token,
+        link,
       },
     });
   }

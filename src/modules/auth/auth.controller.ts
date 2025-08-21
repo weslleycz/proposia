@@ -66,7 +66,7 @@ export class AuthController {
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({ status: 200, description: 'Senha alterada com sucesso' })
   @ApiResponse({ status: 400, description: 'Token inválido ou expirado' })
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
-    return this.authService.resetPassword(dto.token, dto.newPassword);
+  async resetPassword(@Body() data: ResetPasswordDto): Promise<void> {
+    return this.authService.resetPassword(data.token, data.newPassword);
   }
 }
